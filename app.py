@@ -13,24 +13,24 @@ st.set_page_config(
 # Stylish background and elements
 st.markdown("""
     <style>
-    html, body, [class*="css"] {
+    html, body {
         background: linear-gradient(to bottom right, #1f1c2c, #928dab);
         color: white;
         font-family: 'Segoe UI', sans-serif;
     }
-    .stTextInput>div>div>input {
-        background-color: #2b2a33;
-        color: white;
-        border: 1px solid #5c5c7a;
-        border-radius: 8px;
-        padding: 0.6em;
+    input, textarea {
+        background-color: #2b2a33 !important;
+        color: white !important;
+        border: 1px solid #5c5c7a !important;
+        border-radius: 8px !important;
+        padding: 0.6em !important;
     }
-    .stButton>button {
-        background-color: #5A62F2;
-        color: white;
-        padding: 0.5em 1.5em;
-        border-radius: 8px;
-        font-weight: bold;
+    button {
+        background-color: #5A62F2 !important;
+        color: white !important;
+        padding: 0.5em 1.5em !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
     }
     .stChatMessage {
         border-radius: 10px;
@@ -42,9 +42,6 @@ st.markdown("""
     }
     .stChatMessage.assistant {
         background-color: #44475a;
-    }
-    .css-1v0mbdj p {
-        color: #ffffff;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -62,11 +59,6 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # --- AUTH FLOW ---
-# --- AUTH FLOW ---
-query_params = st.query_params
-user_id = query_params.get("user_id")
-auth_success = query_params.get("auth_success") == "true"
-
 if not user_id:
     st.warning("🔐 Please authenticate with Google Calendar")
 
@@ -74,15 +66,12 @@ if not user_id:
 
     if st.button("Continue"):
         try:
-            # Check if user is already authenticated
             check = requests.get(f"{API_BASE}/auth/check", params={"user_id": email})
             if check.status_code == 200 and check.json().get("authenticated"):
-                # Redirect manually
                 redirect_url = f"https://calender-agent-frontend-synv22yjhxvmcwhajarhte.streamlit.app/?user_id={email}&auth_success=true"
                 st.markdown(f"<meta http-equiv='refresh' content='0; URL={redirect_url}' />", unsafe_allow_html=True)
                 st.stop()
             else:
-                # Begin OAuth
                 response = requests.get(f"{API_BASE}/auth/url", params={"user_id": email})
                 auth_url = response.json().get("auth_url")
                 if auth_url:
