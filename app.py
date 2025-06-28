@@ -99,8 +99,13 @@ def main():
 
     # Robust Query Params Handling
     query_params = st.query_params
-    user_id = query_params.get("user_id", [None])[0]
-    auth_success = query_params.get("auth_success", ["false"])[0] == "true"
+    user_id = query_params.get("user_id")
+    if isinstance(user_id, list):
+        user_id = user_id[0] if user_id else None
+    auth_success = query_params.get("auth_success")
+    if isinstance(auth_success, list):
+        auth_success = auth_success[0] if auth_success else "false"
+    auth_success = auth_success == "true"
 
     # Session State Initialization
     if "messages" not in st.session_state:
@@ -118,12 +123,14 @@ def main():
                         check = requests.get(f"{API_BASE}/auth/check", params={"user_id": email})
                     if check.status_code == 200 and check.json().get("authenticated"):
                         redirect_url = f"https://calender-agent-frontend-synv22yjhxvmcwhajarhte.streamlit.app/?user_id={email}&auth_success=true"
-                        st.markdown(f"<meta http-equiv='refresh' content='2; URL={redirect_url}' />", unsafe_allow_html=True)
+                        st.markdown(f"[Click here to continue to the assistant]({redirect_url})", unsafe_allow_html=True)
+                        st.info("You are already authenticated. Click the link above to continue.")
                     else:
                         response = requests.get(f"{API_BASE}/auth/url", params={"user_id": email})
                         auth_url = response.json().get("auth_url")
                         if auth_url:
-                            st.markdown(f"<meta http-equiv='refresh' content='2; URL={auth_url}' />", unsafe_allow_html=True)
+                            st.markdown(f"[Click here to authenticate with Google Calendar]({auth_url})", unsafe_allow_html=True)
+                            st.info("After authenticating, you'll be redirected back here.")
                         else:
                             st.error("Failed to get authentication URL.")
                 except Exception as e:
