@@ -98,7 +98,7 @@ def main():
     st.markdown('<div class="welcome-title">Welcome to Smart Calendar Assistant</div>', unsafe_allow_html=True)
 
     # Robust Query Params Handling
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
     user_id = query_params.get("user_id", [None])[0]
     auth_success = query_params.get("auth_success", ["false"])[0] == "true"
 
