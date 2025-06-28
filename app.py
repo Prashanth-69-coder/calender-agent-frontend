@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_BASE = "http://localhost:8000"
+API_BASE = "https://calender-agent-backend-render-3.onrender.com"
 
 # Page config
 st.set_page_config(
@@ -78,7 +78,7 @@ if not user_id:
             check = requests.get(f"{API_BASE}/auth/check", params={"user_id": email})
             if check.status_code == 200 and check.json().get("authenticated"):
                 # Redirect manually
-                redirect_url = f"http://localhost:8501?user_id={email}&auth_success=true"
+                redirect_url = f"https://calender-agent-frontend-synv22yjhxvmcwhajarhte.streamlit.app/?user_id={email}&auth_success=true"
                 st.markdown(f"<meta http-equiv='refresh' content='0; URL={redirect_url}' />", unsafe_allow_html=True)
                 st.stop()
             else:
