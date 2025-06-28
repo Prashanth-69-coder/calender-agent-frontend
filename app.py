@@ -205,6 +205,3 @@ def main():
 
         # Minimal footer
         st.markdown('<div class="footer">Powered by AI • Secure • Private</div>', unsafe_allow_html=True)
-
-if __name__ == "__main__":
-    main() 
