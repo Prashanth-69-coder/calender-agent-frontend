@@ -97,10 +97,10 @@ def get_calendar_events(user_id):
 def main():
     st.markdown('<div class="welcome-title">Welcome to Smart Calendar Assistant</div>', unsafe_allow_html=True)
 
-    # Query Params
-    query_params = st.query_params
-    user_id = query_params.get("user_id")
-    auth_success = query_params.get("auth_success") == "true"
+    # Robust Query Params Handling
+    query_params = st.experimental_get_query_params()
+    user_id = query_params.get("user_id", [None])[0]
+    auth_success = query_params.get("auth_success", ["false"])[0] == "true"
 
     # Session State Initialization
     if "messages" not in st.session_state:
@@ -132,9 +132,11 @@ def main():
                 st.error("Please enter a valid email address.")
         st.stop()
 
-    # Auth success feedback
+    # Auth success feedback and refresh button
     if auth_success:
         st.success(f'Successfully connected as `{user_id}`! You can now start managing your calendar.')
+        if st.button("🔄 Refresh to start using the assistant"):
+            st.rerun()
         time.sleep(2)
 
     # --- SUGGESTIONS SECTION ---
