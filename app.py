@@ -13,7 +13,7 @@ st.set_page_config(
     page_icon="🧠"
 )
 
-# Gradient background and minimal styling
+# Custom CSS
 st.markdown("""
     <style>
     body, .stApp {
@@ -72,7 +72,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Predefined suggestions
 SUGGESTIONS = [
     "📅 Schedule a meeting tomorrow at 2pm",
     "🔍 Am I free Monday at 10am?",
@@ -84,6 +83,7 @@ SUGGESTIONS = [
     "🎯 Check my availability this afternoon"
 ]
 
+# Helper: Get calendar events (if needed)
 def get_calendar_events(user_id):
     try:
         response = requests.get(f"{API_BASE}/calendar/events", params={"user_id": user_id})
@@ -93,16 +93,16 @@ def get_calendar_events(user_id):
     except:
         return []
 
+# --- MAIN ---
 def main():
-    # Centered welcome message
     st.markdown('<div class="welcome-title">Welcome to Smart Calendar Assistant</div>', unsafe_allow_html=True)
 
-    # Query params
+    # Query Params
     query_params = st.query_params
     user_id = query_params.get("user_id")
     auth_success = query_params.get("auth_success") == "true"
 
-    # Session state
+    # Session State Initialization
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "suggestions_clicked" not in st.session_state:
@@ -110,11 +110,7 @@ def main():
 
     # --- AUTH FLOW ---
     if not user_id:
-        email = st.text_input(
-            "Enter your Google Email:",
-            placeholder="your.email@gmail.com",
-            key="email"
-        )
+        email = st.text_input("Enter your Google Email:", placeholder="your.email@gmail.com", key="email")
         if st.button("🔐 Connect Google Calendar", type="primary"):
             if email and "@" in email:
                 try:
@@ -135,73 +131,68 @@ def main():
             else:
                 st.error("Please enter a valid email address.")
         st.stop()
-    else:
-        if auth_success:
-            st.success(f'Successfully connected as `{user_id}`! You can now start managing your calendar.')
-            time.sleep(2)
-            st.rerun()
 
-        # Suggestions section
-        st.markdown('<div class="suggestions-grid">', unsafe_allow_html=True)
-        for i, suggestion in enumerate(SUGGESTIONS):
-            if st.button(suggestion, key=f"suggestion_{i}", help=suggestion):
-                if suggestion not in st.session_state.suggestions_clicked:
-                    st.session_state.suggestions_clicked.add(suggestion)
-                    st.session_state.messages.append({"role": "user", "content": suggestion})
-                    with st.spinner("Processing..."):
-                        try:
-                            res = requests.post(
-                                f"{API_BASE}/chat",
-                                json={"message": suggestion, "user_id": user_id},
-                                timeout=30
-                            )
-                            if res.status_code == 200:
-                                reply = res.json().get("reply")
-                                st.session_state.messages.append({"role": "assistant", "content": reply})
-                            else:
-                                error_msg = f"❌ Server error: {res.status_code}"
-                                st.session_state.messages.append({"role": "assistant", "content": error_msg})
-                        except Exception as e:
-                            error_msg = f"❌ Connection error: {str(e)}"
-                            st.session_state.messages.append({"role": "assistant", "content": error_msg})
-                    st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Auth success feedback
+    if auth_success:
+        st.success(f'Successfully connected as `{user_id}`! You can now start managing your calendar.')
+        time.sleep(2)
 
-        # Chat interface
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-        prompt = st.chat_input("What would you like to schedule or ask?")
-        if prompt:
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            with st.chat_message("assistant"):
-                with st.spinner("🤔 Thinking..."):
+    # --- SUGGESTIONS SECTION ---
+    st.markdown('<div class="suggestions-grid">', unsafe_allow_html=True)
+    for i, suggestion in enumerate(SUGGESTIONS):
+        if st.button(suggestion, key=f"suggestion_{i}", help=suggestion):
+            if suggestion not in st.session_state.suggestions_clicked:
+                st.session_state.suggestions_clicked.add(suggestion)
+                st.session_state.messages.append({"role": "user", "content": suggestion})
+                with st.spinner("Processing..."):
                     try:
                         res = requests.post(
                             f"{API_BASE}/chat",
-                            json={"message": prompt, "user_id": user_id},
+                            json={"message": suggestion, "user_id": user_id},
                             timeout=30
                         )
                         if res.status_code == 200:
                             reply = res.json().get("reply")
-                            st.markdown(reply)
-                            st.session_state.messages.append({"role": "assistant", "content": reply})
                         else:
-                            error_msg = f"❌ Server error ({res.status_code}): {res.text}"
-                            st.markdown(error_msg)
-                            st.session_state.messages.append({"role": "assistant", "content": error_msg})
-                    except requests.exceptions.Timeout:
-                        error_msg = "⏰ Request timed out. Please try again."
-                        st.markdown(error_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": error_msg})
+                            reply = f"❌ Server error: {res.status_code}"
                     except Exception as e:
-                        error_msg = f"❌ Connection error: {str(e)}"
-                        st.markdown(error_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": error_msg})
-        st.markdown('</div>', unsafe_allow_html=True)
+                        reply = f"❌ Connection error: {str(e)}"
+                    st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.markdown('</div>', unsafe_allow_html=True)
 
-        # Minimal footer
-        st.markdown('<div class="footer">Powered by AI • Secure • Private</div>', unsafe_allow_html=True)
+    # --- CHAT CONTAINER ---
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    for i, message in enumerate(st.session_state.messages):
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"], unsafe_allow_html=True)
+    prompt = st.chat_input("What would you like to schedule or ask?")
+    if prompt:
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        with st.chat_message("assistant"):
+            with st.spinner("🤔 Thinking..."):
+                try:
+                    res = requests.post(
+                        f"{API_BASE}/chat",
+                        json={"message": prompt, "user_id": user_id},
+                        timeout=30
+                    )
+                    if res.status_code == 200:
+                        reply = res.json().get("reply")
+                    else:
+                        reply = f"❌ Server error ({res.status_code}): {res.text}"
+                except requests.exceptions.Timeout:
+                    reply = "⏰ Request timed out. Please try again."
+                except Exception as e:
+                    reply = f"❌ Connection error: {str(e)}"
+                st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Footer
+    st.markdown('<div class="footer">Powered by AI • Secure • Private</div>', unsafe_allow_html=True)
+
+# --- Run App ---
+if __name__ == "__main__":
+    main()
